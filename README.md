@@ -24,10 +24,10 @@ A **retrieval-augmented** assistant that answers questions about your profile (s
 | `src/assets/` | Optional images (e.g. assistant chat avatar) |
 | `src/ingest.py` | Build / refresh the FAISS index from `src/data/` |
 | `src/qa_prompts.py` | Prompt template for the QA chain |
-| `src/streamlit_app.py` | Original Streamlit UI |
-| `src/streamlit_app2.py` | Streamlit UI with chat layout, quick prompts, optional custom avatar |
+| `src/app.py` | **Streamlit web UI** — chat layout, quick prompts, hidden sidebar, optional avatar |
 | `src/qa_chain_cli.py` | CLI Q&A (run from `src/` so imports resolve) |
-| `requirements.txt` | Python dependencies |
+| `src/extra_qa_chains.py` | Extra chain experiments |
+| `requirements.txt` | Python dependencies (duplicate copy in `src/requirements.txt` for convenience / Spaces-style layouts; either file is the same set of packages) |
 
 ## Setup
 
@@ -48,9 +48,13 @@ source venv/bin/activate
 
 ### 2. Install dependencies
 
+From the **repository root**:
+
 ```bash
 pip install -r requirements.txt
 ```
+
+(Alternatively: `pip install -r src/requirements.txt` — same list.)
 
 Always **run Streamlit with this venv active** (or use `venv\Scripts\python.exe -m streamlit …`) so packages like `huggingface_hub` resolve correctly.
 
@@ -58,13 +62,13 @@ Always **run Streamlit with this venv active** (or use `venv\Scripts\python.exe 
 
 Create a `.env` file where you will **run commands from**: `python-dotenv` loads `.env` from the **current working directory**. Common choices:
 
-- **Project root** (next to `requirements.txt`) if you run `streamlit run src/streamlit_app2.py` from that folder.
-- **`src/`** if you prefer `cd src` then `streamlit run streamlit_app2.py` — put `.env` in `src/` in that case.
+- **Project root** (next to `requirements.txt`) if you run `streamlit run src/app.py` from that folder.
+- **`src/`** if you prefer `cd src` then `streamlit run app.py` — put `.env` in `src/` in that case.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GOOGLE_API_KEY` | Yes* | Gemini API key |
-| `HUGGING_FACE_API_TOKEN` | Yes* | Hugging Face token for **Inference API** embeddings at query time in the Streamlit apps |
+| `HUGGING_FACE_API_TOKEN` | Yes* | Hugging Face token for **Inference API** embeddings at query time in the Streamlit app |
 | `HUGGING_FACE_EMBEDDING_MODEL` | No | Default: `sentence-transformers/all-MiniLM-L6-v2` |
 | `LLM_MODEL` | No | Default in code: `gemini-1.5-flash` (override e.g. `gemini-2.5-flash`) |
 | `ASSISTANT_AVATAR_URL` | No | **Direct URL** to an image file (`.png` / `.jpg`), not an HTML page |
@@ -84,28 +88,33 @@ python src/ingest.py
 
 This reads files under `src/data/`, writes `src/data_index/`, and `embeddings_model.txt` for consistency with retrieval.
 
-> **Note:** `ingest.py` uses **local** `HuggingFaceEmbeddings` (see that file). The Streamlit apps use the **HF Inference API** for embeddings when loading the index, so the embedding model name should stay aligned with what you used at ingest.
+> **Note:** `ingest.py` uses **local** `HuggingFaceEmbeddings` (see that file). The Streamlit app uses the **HF Inference API** for embeddings when loading the index, so the embedding model name should stay aligned with what you used at ingest.
 
-If `src/data_index/` is missing, `streamlit_app.py` / `streamlit_app2.py` will try to run `ingest.py` automatically on first load (with a spinner).
+If `src/data_index/` is missing, **`src/app.py`** will try to run `ingest.py` automatically on first load (with a spinner).
 
 ## Run the web UI
 
 From the **project root**, with the venv activated:
 
 ```bash
-streamlit run src/streamlit_app2.py
+streamlit run src/app.py
 ```
 
-**`streamlit_app2.py`** — centered layout, quick prompts (third-person questions about you), sidebar hidden, optional assistant avatar under `src/assets/`.
+Or from **`src/`**:
 
-**`streamlit_app.py`** — simpler, earlier UI with a settings sidebar.
+```bash
+cd src
+streamlit run app.py
+```
 
-## Assistant avatar (`streamlit_app2`)
+**`app.py`** — centered layout, quick prompts (third-person questions), sidebar hidden via CSS, optional assistant avatar under `src/assets/`.
+
+## Assistant avatar (`app.py`)
 
 Streamlit only accepts a **direct image URL** or a **local file path**, not a gallery page URL.
 
 1. Export your artwork as **PNG** or **JPG** (e.g. from [Vecteezy](https://www.vecteezy.com/vector-art/43182555-robot-emotion-element-chatbot-avatar-chat-bot-character-head-with-feelings-digital-assistant-icon) or your own asset) and respect the provider’s license.
-2. Save it as **`src/assets/chatbot_avatar.png`** (or `.jpg` / `.jpeg` / `.webp` — see `streamlit_app2.py` for checked names).
+2. Save it as **`src/assets/chatbot_avatar.png`** (or `.jpg` / `.jpeg` / `.webp` — see `app.py` for valid filenames).
 
 If no file is present and no env override is set, the default Streamlit assistant icon is used.
 
@@ -121,6 +130,6 @@ python qa_chain_cli.py
 ## Roadmap / ideas
 
 - Richer data under `src/data/` and periodic re-ingest  
-- Optional “show sources” UX in `streamlit_app2`  
+- Optional “show sources” in the Streamlit UI  
 - Job-description fit / alignment flow  
-- Deployment (e.g. Hugging Face Spaces / Docker) with secrets configured in the host, not in the repo  
+- Deployment (e.g. Hugging Face Spaces / Docker) with secrets on the host, not in the repo  
