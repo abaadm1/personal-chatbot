@@ -7,8 +7,8 @@ from qa_prompts import PROMPT_TMPL
 
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_prompts import PromptTemplate
-from langchain_chains import RetrievalQA
+from langchain_classic.prompts import PromptTemplate
+from langchain_classic.chains import RetrievalQA
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
@@ -73,7 +73,7 @@ def main():
 
     chain = build_chain_gemini(retriever)
 
-    print("\My Profile Chatbot ready. Ask about me.")
+    print("\nMy Profile Chatbot ready. Ask about me.")
     print("Type 'exit' to quit.\n")
 
     while True:
@@ -94,7 +94,7 @@ def main():
         except Exception as e:
             answer = f"[error] {e}"
 
-        print("\nMaheen:", textwrap.fill(answer, width=100))
+        print("\nAssistant:", textwrap.fill(answer, width=100))
         print()
 
 if __name__ == "__main__":

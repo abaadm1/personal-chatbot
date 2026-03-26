@@ -21,13 +21,13 @@ A **retrieval-augmented** assistant that answers questions about your profile (s
 |------|------|
 | `src/data/` | Put `.txt`, `.md`, and `.pdf` files to index (CV, certificates, etc.) |
 | `src/data_index/` | Generated FAISS index (created by ingest or first Streamlit run) |
-| `src/assets/` | Optional images (e.g. assistant chat avatar) |
+| `src/assets/` | Chat avatars (raster images); see **Chat avatars** below |
 | `src/ingest.py` | Build / refresh the FAISS index from `src/data/` |
 | `src/qa_prompts.py` | Prompt template for the QA chain |
-| `src/app.py` | **Streamlit web UI** — chat layout, quick prompts, hidden sidebar, optional avatar |
-| `src/qa_chain_cli.py` | CLI Q&A (run from `src/` so imports resolve) |
+| `src/app.py` | **Streamlit UI** — chat, quick prompts (full questions), avatars, CSS hides sidebar and aligns the 3-column prompt grid |
+| `src/qa_chain_cli.py` | CLI Q&A over the same FAISS index (run from `src/`) |
 | `src/extra_qa_chains.py` | Extra chain experiments |
-| `requirements.txt` | Python dependencies (duplicate copy in `src/requirements.txt` for convenience / Spaces-style layouts; either file is the same set of packages) |
+| `requirements.txt` | Python dependencies (mirror: `src/requirements.txt`) |
 
 ## Setup
 
@@ -58,6 +58,8 @@ pip install -r requirements.txt
 
 Always **run Streamlit with this venv active** (or use `venv\Scripts\python.exe -m streamlit …`) so packages like `huggingface_hub` resolve correctly.
 
+The Streamlit app and CLI use **`langchain_classic`** for `RetrievalQA` / prompts; install includes **`langchain-classic`** (see `requirements.txt`).
+
 ### 3. Environment variables
 
 Create a `.env` file where you will **run commands from**: `python-dotenv` loads `.env` from the **current working directory**. Common choices:
@@ -69,10 +71,10 @@ Create a `.env` file where you will **run commands from**: `python-dotenv` loads
 |----------|----------|-------------|
 | `GOOGLE_API_KEY` | Yes* | Gemini API key |
 | `HUGGING_FACE_API_TOKEN` | Yes* | Hugging Face token for **Inference API** embeddings at query time in the Streamlit app |
-| `HUGGING_FACE_EMBEDDING_MODEL` | No | Default: `sentence-transformers/all-MiniLM-L6-v2` |
+| `HUGGING_FACE_EMBEDDING_MODEL` | No | Default in code: `sentence-transformers/all-MiniLM-L6-v2` |
 | `LLM_MODEL` | No | Default in code: `gemini-1.5-flash` (override e.g. `gemini-2.5-flash`) |
-| `ASSISTANT_AVATAR_URL` | No | **Direct URL** to an image file (`.png` / `.jpg`), not an HTML page |
-| `ASSISTANT_AVATAR_PATH` | No | Absolute path to a local avatar image |
+| `USER_AVATAR_PATH` | No | Override path to the **user** chat avatar image (otherwise `src/assets/` filenames below) |
+| `ASSISTANT_AVATAR_PATH` | No | Override path to the **assistant** avatar (otherwise `src/assets/` filenames below) |
 
 \*Required for the shipped Streamlit + Gemini flow.
 
@@ -107,25 +109,38 @@ cd src
 streamlit run app.py
 ```
 
-**`app.py`** — centered layout, quick prompts (third-person questions), sidebar hidden via CSS, optional assistant avatar under `src/assets/`.
+**`app.py`** — centered layout, **six quick-prompt buttons** (full questions, not shortened), **sidebar hidden** via CSS, **3-column prompt rows** with equal-height styling, and **avatars** from `src/assets/` when present.
 
-## Assistant avatar (`app.py`)
+## Chat avatars (`src/assets/`)
 
-Streamlit only accepts a **direct image URL** or a **local file path**, not a gallery page URL.
+Streamlit loads avatars from **local raster images** (PNG, JPG, or WebP). The app uses the first match in each list (same order as in `src/app.py`):
 
-1. Export your artwork as **PNG** or **JPG** (e.g. from [Vecteezy](https://www.vecteezy.com/vector-art/43182555-robot-emotion-element-chatbot-avatar-chat-bot-character-head-with-feelings-digital-assistant-icon) or your own asset) and respect the provider’s license.
-2. Save it as **`src/assets/chatbot_avatar.png`** (or `.jpg` / `.jpeg` / `.webp` — see `app.py` for valid filenames).
+**User**
 
-If no file is present and no env override is set, the default Streamlit assistant icon is used.
+- `user.png`, `user.jpg`, `user.jpeg`, `user.webp`
+- `user_avatar.png`, `user_avatar.jpg`, `user_avatar.jpeg`, `user_avatar.webp`
+
+**Assistant**
+
+- `chatbot.png`, `chatbot.jpg`, `chatbot.jpeg`, `chatbot.webp`
+- `chatbot_avatar.png`, `chatbot_avatar.jpg`, `chatbot_avatar.jpeg`, `chatbot_avatar.webp`
+
+The repo is intended to ship with **`user.png`** and **`chatbot.png`**. You can replace them or set **`USER_AVATAR_PATH`** / **`ASSISTANT_AVATAR_PATH`** in `.env`.
+
+**SVG:** `st.chat_message` does not reliably use SVG as an avatar; use PNG/JPG/WebP for the running UI. An optional **`chatbot.svg`** can remain in `src/assets/` only as a source graphic for you to export into `chatbot.png`.
+
+If no file matches for a role, Streamlit’s default icon is used for that role.
 
 ## CLI (optional)
 
-From **`src/`**:
+From **`src/`** (same `.env` and index as the web app):
 
 ```bash
 cd src
 python qa_chain_cli.py
 ```
+
+Uses local `HuggingFaceEmbeddings` (from `embeddings_model.txt` in the index) and Gemini, same prompt template as `qa_prompts.py`.
 
 ## Roadmap / ideas
 

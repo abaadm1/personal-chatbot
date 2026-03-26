@@ -1,5 +1,5 @@
 """
-Streamlit UI variant: same RAG + Gemini stack as streamlit_app.py.
+Streamlit UI: RAG + Gemini (FAISS, HF Inference embeddings).
 Visitors ask about Abaad Murtaza; replies follow qa_prompts (Abaad speaking to recruiters).
 """
 import subprocess
@@ -32,9 +32,22 @@ ROOT_DIR = Path(__file__).resolve().parent
 INDEX_DIR = ROOT_DIR / "data_index"
 PROJECT_ROOT = ROOT_DIR.parent
 ASSETS_DIR = ROOT_DIR / "assets"
-# Page URL is not a loadable image; export PNG/JPG from Vecteezy and save as chatbot_avatar.png:
-# https://www.vecteezy.com/vector-art/43182555-robot-emotion-element-chatbot-avatar-chat-bot-character-head-with-feelings-digital-assistant-icon
+
+_USER_AVATAR_FILES = (
+    ASSETS_DIR / "user.png",
+    ASSETS_DIR / "user.jpg",
+    ASSETS_DIR / "user.jpeg",
+    ASSETS_DIR / "user.webp",
+    ASSETS_DIR / "user_avatar.png",
+    ASSETS_DIR / "user_avatar.jpg",
+    ASSETS_DIR / "user_avatar.jpeg",
+    ASSETS_DIR / "user_avatar.webp",
+)
 _ASSISTANT_AVATAR_FILES = (
+    ASSETS_DIR / "chatbot.png",
+    ASSETS_DIR / "chatbot.jpg",
+    ASSETS_DIR / "chatbot.jpeg",
+    ASSETS_DIR / "chatbot.webp",
     ASSETS_DIR / "chatbot_avatar.png",
     ASSETS_DIR / "chatbot_avatar.jpg",
     ASSETS_DIR / "chatbot_avatar.jpeg",
@@ -42,20 +55,37 @@ _ASSISTANT_AVATAR_FILES = (
 )
 
 
+def _first_existing_file(paths: Tuple[Path, ...]) -> str | None:
+    for cand in paths:
+        if cand.is_file():
+            return str(cand.resolve())
+    return None
+
+
+def _resolve_user_avatar() -> str | None:
+    path_env = (os.getenv("USER_AVATAR_PATH") or "").strip()
+    if path_env:
+        p = Path(path_env).expanduser()
+        if p.is_file():
+            return str(p.resolve())
+    return _first_existing_file(_USER_AVATAR_FILES)
+
+
 def _resolve_assistant_avatar() -> str | None:
-    """Direct HTTPS URL to an image file, absolute file path, or bundled asset under src/assets/."""
-    url = (os.getenv("ASSISTANT_AVATAR_URL") or "").strip()
-    if url.startswith(("http://", "https://")):
-        return url
     path_env = (os.getenv("ASSISTANT_AVATAR_PATH") or "").strip()
     if path_env:
         p = Path(path_env).expanduser()
         if p.is_file():
             return str(p.resolve())
-    for cand in _ASSISTANT_AVATAR_FILES:
-        if cand.is_file():
-            return str(cand.resolve())
-    return None
+    return _first_existing_file(_ASSISTANT_AVATAR_FILES)
+
+
+@contextmanager
+def _user_chat() -> Iterator[None]:
+    av = _resolve_user_avatar()
+    cm = st.chat_message("user", avatar=av) if av else st.chat_message("user")
+    with cm:
+        yield
 
 
 @contextmanager
@@ -88,13 +118,43 @@ CONVERSATION_STARTERS: List[Tuple[str, str]] = [
 ]
 
 
-def _hide_sidebar_css() -> None:
+def _app_ui_css() -> None:
+    """Sidebar hidden + equal-height quick-prompt buttons (full text, no shortening)."""
     st.markdown(
         """
         <style>
             [data-testid="stSidebar"] { display: none !important; }
             [data-testid="stSidebarCollapsedControl"] { display: none !important; }
             [data-testid="collapsedControl"] { display: none !important; }
+
+            /* Quick prompts: only horizontal blocks with exactly 3 columns (not the 2-col header). */
+            section.main [data-testid="stHorizontalBlock"]:has(div[data-testid="column"]:nth-child(3)):not(:has(div[data-testid="column"]:nth-child(4))) {
+                display: flex !important;
+                align-items: stretch !important;
+                gap: 0.65rem !important;
+            }
+            section.main [data-testid="stHorizontalBlock"]:has(div[data-testid="column"]:nth-child(3)):not(:has(div[data-testid="column"]:nth-child(4))) div[data-testid="column"] {
+                display: flex !important;
+                flex-direction: column !important;
+                flex: 1 1 0 !important;
+                min-width: 0 !important;
+            }
+            section.main [data-testid="stHorizontalBlock"]:has(div[data-testid="column"]:nth-child(3)):not(:has(div[data-testid="column"]:nth-child(4))) div[data-testid="column"] .stButton {
+                flex: 1 1 auto !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            section.main [data-testid="stHorizontalBlock"]:has(div[data-testid="column"]:nth-child(3)):not(:has(div[data-testid="column"]:nth-child(4))) .stButton > button {
+                height: 100% !important;
+                min-height: 7.5rem !important;
+                width: 100% !important;
+                white-space: normal !important;
+                text-align: left !important;
+                line-height: 1.35 !important;
+                padding: 0.65rem 0.75rem !important;
+                align-items: flex-start !important;
+                justify-content: flex-start !important;
+            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -107,7 +167,7 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="collapsed",
 )
-_hide_sidebar_css()
+_app_ui_css()
 
 
 if not INDEX_DIR.exists():
@@ -250,7 +310,7 @@ st.divider()
 
 # Chat history
 for q, a, srcs in st.session_state.history:
-    with st.chat_message("user"):
+    with _user_chat():
         st.markdown(q)
     with _assistant_chat():
         st.markdown(a)
