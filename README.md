@@ -1,19 +1,6 @@
----
-title: My Profile Chatbot
-emoji: 🚀
-colorFrom: green
-colorTo: yellow
-sdk: docker
-app_port: 8501
-tags:
-- streamlit
-pinned: false
-short_description: RAG chatbot over CV and documents — Gemini, FAISS, Streamlit
----
-
 # My Profile Chatbot
 
-A **retrieval-augmented** assistant that answers questions about your profile (skills, education, experience) using **local documents**, **Google Gemini** for generation, and **FAISS** for search. The system prompt in `src/qa_prompts.py` defines tone and behavior (e.g. speaking as you in a recruiter-friendly way).
+A **retrieval-augmented** assistant that answers questions about your profile (skills, education, experience) using **local documents**, **Google Gemini** for generation, and **FAISS** for search. The system prompt in `src/qa_prompts.py` defines tone and behavior (e.g. speaking as Abaad in a recruiter-friendly way).
 
 ## Project structure
 
