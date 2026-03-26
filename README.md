@@ -109,28 +109,6 @@ cd src
 streamlit run app.py
 ```
 
-**`app.py`** — centered layout, **six quick-prompt buttons** (full questions, not shortened), **sidebar hidden** via CSS, **3-column prompt rows** with equal-height styling, and **avatars** from `src/assets/` when present.
-
-## Chat avatars (`src/assets/`)
-
-Streamlit loads avatars from **local raster images** (PNG, JPG, or WebP). The app uses the first match in each list (same order as in `src/app.py`):
-
-**User**
-
-- `user.png`, `user.jpg`, `user.jpeg`, `user.webp`
-- `user_avatar.png`, `user_avatar.jpg`, `user_avatar.jpeg`, `user_avatar.webp`
-
-**Assistant**
-
-- `chatbot.png`, `chatbot.jpg`, `chatbot.jpeg`, `chatbot.webp`
-- `chatbot_avatar.png`, `chatbot_avatar.jpg`, `chatbot_avatar.jpeg`, `chatbot_avatar.webp`
-
-The repo is intended to ship with **`user.png`** and **`chatbot.png`**. You can replace them or set **`USER_AVATAR_PATH`** / **`ASSISTANT_AVATAR_PATH`** in `.env`.
-
-**SVG:** `st.chat_message` does not reliably use SVG as an avatar; use PNG/JPG/WebP for the running UI. An optional **`chatbot.svg`** can remain in `src/assets/` only as a source graphic for you to export into `chatbot.png`.
-
-If no file matches for a role, Streamlit’s default icon is used for that role.
-
 ## CLI (optional)
 
 From **`src/`** (same `.env` and index as the web app):
