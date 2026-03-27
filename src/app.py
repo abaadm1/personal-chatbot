@@ -244,7 +244,7 @@ if not hf_token:
 
 # Match streamlit_app.py defaults (no sidebar controls)
 k = 4
-max_new_tokens = 512
+max_new_tokens = 1500
 temperature = 0.1
 show_sources = False
 

@@ -6,7 +6,7 @@ def build_chain(retriever, model_name: str = LLM_MODEL_NAME):
         "text2text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_new_tokens=512,
+        max_new_tokens=1500,
     )
     llm = HuggingFacePipeline(pipeline=gen)
 
@@ -44,7 +44,7 @@ def build_chain_qwen(retriever, model_name: str = "Qwen/Qwen2.5-7B-Instruct"):
         task="text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_new_tokens=512,
+        max_new_tokens=1500,
         do_sample=False,            # deterministic for QA
         truncation=True,            # avoid context overruns
         return_full_text=False,     # only the generated answer
@@ -85,7 +85,7 @@ def build_chain_gemma(retriever, model_name: str = "google/gemma-2-2b-it"):
         task="text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_new_tokens=512,
+        max_new_tokens=1500,
         do_sample=False,            # deterministic for QA
         truncation=True,            # avoid context overruns
         return_full_text=False,     # only generated continuation

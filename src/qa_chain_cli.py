@@ -45,7 +45,7 @@ def build_chain_gemini(retriever):
         model=LLM_MODEL_NAME,
         api_key=GOOGLE_API_KEY,
         temperature=0.1,
-        max_output_tokens=512,
+        max_output_tokens=1500,
         convert_system_message_to_human=True,
     )
 
