@@ -1,115 +1,115 @@
-# My Profile Chatbot
+# Personal Profile Chatbot
 
-A **retrieval-augmented** assistant that answers questions about your profile (skills, education, experience) using **local documents**, **Google Gemini** for generation, and **FAISS** for search. The system prompt in `src/qa_prompts.py` defines tone and behavior (e.g. speaking as Abaad in a recruiter-friendly way).
+A retrieval-augmented assistant that answers questions about your profile using local documents, Google Gemini for generation, and FAISS for search. The system uses a professional tone optimized for recruiter interactions.
 
-## Project structure
+## Project Structure
 
-| Path | Role |
-|------|------|
-| `src/data/` | Put `.txt`, `.md`, and `.pdf` files to index (CV, certificates, etc.) |
+| Path | Purpose |
+|------|---------|
+| `src/data/` | Document storage (.txt, .md, .pdf files for CV, certificates, etc.) |
 | `src/data_index/` | Generated FAISS index (created by ingest or first Streamlit run) |
-| `src/assets/` | Chat avatars (raster images); see **Chat avatars** below |
-| `src/ingest.py` | Build / refresh the FAISS index from `src/data/` |
-| `src/qa_prompts.py` | Prompt template for the QA chain |
-| `src/app.py` | **Streamlit UI** — chat, quick prompts (full questions), avatars, CSS hides sidebar and aligns the 3-column prompt grid |
-| `src/qa_chain_cli.py` | CLI Q&A over the same FAISS index (run from `src/`) |
-| `src/extra_qa_chains.py` | Extra chain experiments |
-| `requirements.txt` | Python dependencies (mirror: `src/requirements.txt`) |
+| `src/assets/` | Chat avatars (user.png, chatbot.png) |
+| `src/ingest.py` | Builds/refreshes FAISS index from `src/data/` |
+| `src/qa_prompts.py` | System prompt template defining tone and behavior |
+| `src/app.py` | Streamlit web interface with chat and quick prompts |
+| `src/qa_chain_cli.py` | Command-line interface for Q&A |
+| `src/extra_qa_chains.py` | Additional chain experiments |
+| `requirements.txt` | Python dependencies |
 
 ## Setup
 
-### 1. Python virtual environment
+### 1. Virtual Environment
 
+**Windows:**
 ```powershell
-cd path\to\MyProfileChatbot-main
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-On macOS/Linux:
-
+**macOS/Linux:**
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 2. Install dependencies
-
-From the **repository root**:
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-(Alternatively: `pip install -r src/requirements.txt` — same list.)
+### 3. Environment Variables
 
-Always **run Streamlit with this venv active** (or use `venv\Scripts\python.exe -m streamlit …`) so packages like `huggingface_hub` resolve correctly.
-
-The Streamlit app and CLI use **`langchain_classic`** for `RetrievalQA` / prompts; install includes **`langchain-classic`** (see `requirements.txt`).
-
-### 3. Environment variables
-
-Create a `.env` file where you will **run commands from**: `python-dotenv` loads `.env` from the **current working directory**. Common choices:
-
-- **Project root** (next to `requirements.txt`) if you run `streamlit run src/app.py` from that folder.
-- **`src/`** if you prefer `cd src` then `streamlit run app.py` — put `.env` in `src/` in that case.
+Create a `.env` file in the project root or `src/` directory:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GOOGLE_API_KEY` | Yes* | Gemini API key |
-| `HUGGING_FACE_API_TOKEN` | Yes* | Hugging Face token for **Inference API** embeddings at query time in the Streamlit app |
-| `HUGGING_FACE_EMBEDDING_MODEL` | No | Default in code: `sentence-transformers/all-MiniLM-L6-v2` |
-| `LLM_MODEL` | No | Default in code: `gemini-1.5-flash` (override e.g. `gemini-2.5-flash`) |
-| `USER_AVATAR_PATH` | No | Override path to the **user** chat avatar image (otherwise `src/assets/` filenames below) |
-| `ASSISTANT_AVATAR_PATH` | No | Override path to the **assistant** avatar (otherwise `src/assets/` filenames below) |
+| `GOOGLE_API_KEY` | Yes | Gemini API key |
+| `HUGGING_FACE_API_TOKEN` | Yes | Hugging Face token for embeddings |
+| `HUGGING_FACE_EMBEDDING_MODEL` | No | Default: `sentence-transformers/all-MiniLM-L6-v2` |
+| `LLM_MODEL` | No | Default: `gemini-1.5-flash` |
+| `USER_AVATAR_PATH` | No | Custom user avatar path |
+| `ASSISTANT_AVATAR_PATH` | No | Custom assistant avatar path |
 
-\*Required for the shipped Streamlit + Gemini flow.
+**Security:** Add `.env` to `.gitignore` - never commit API keys.
 
-**Security:** Do not commit real keys. Add `.env` to `.gitignore` if it is not already ignored.
-
-### 4. Build the document index
-
-From the **project root**:
+### 4. Build Document Index
 
 ```bash
 python src/ingest.py
 ```
 
-This reads files under `src/data/`, writes `src/data_index/`, and `embeddings_model.txt` for consistency with retrieval.
+This processes files in `src/data/` and creates the FAISS index in `src/data_index/`. The web app will auto-run this on first load if the index is missing.
 
-> **Note:** `ingest.py` uses **local** `HuggingFaceEmbeddings` (see that file). The Streamlit app uses the **HF Inference API** for embeddings when loading the index, so the embedding model name should stay aligned with what you used at ingest.
+## Usage
 
-If `src/data_index/` is missing, **`src/app.py`** will try to run `ingest.py` automatically on first load (with a spinner).
-
-## Run the web UI
-
-From the **project root**, with the venv activated:
+### Web Interface
 
 ```bash
 streamlit run src/app.py
 ```
 
-Or from **`src/`**:
+Features:
+- Topic-based quick prompts (Overview, Education, Work Experience, etc.)
+- Chat interface with custom avatars
+- Professional recruiter-friendly responses
+- Automatic index building on first run
 
-```bash
-cd src
-streamlit run app.py
-```
-
-## CLI (optional)
-
-From **`src/`** (same `.env` and index as the web app):
+### Command Line Interface
 
 ```bash
 cd src
 python qa_chain_cli.py
 ```
 
-Uses local `HuggingFaceEmbeddings` (from `embeddings_model.txt` in the index) and Gemini, same prompt template as `qa_prompts.py`.
+Provides the same Q&A functionality in a terminal interface.
 
-## Roadmap / ideas
+## Document Organization
 
-- Richer data under `src/data/` and periodic re-ingest  
-- Optional “show sources” in the Streamlit UI  
-- Job-description fit / alignment flow  
-- Deployment (e.g. Hugging Face Spaces / Docker) with secrets on the host, not in the repo  
+Place your profile documents in `src/data/`. The system supports:
+- Text files (.txt, .md)
+- PDF files (.pdf)
+- Organized by topic (education, work experience, skills, etc.)
+
+## Configuration
+
+The chatbot behavior is controlled by:
+- **System Prompt**: `src/qa_prompts.py` - defines tone, response format, and rules
+- **Quick Prompts**: Predefined questions organized by topic in `src/app.py`
+- **Embedding Model**: Configurable via environment variable
+- **LLM Model**: Configurable (Gemini models supported)
+
+## Technical Details
+
+- **Vector Store**: FAISS for efficient similarity search
+- **Embeddings**: Hugging Face models (local for ingest, API for queries)
+- **LLM**: Google Gemini for response generation
+- **Framework**: LangChain Classic for RAG pipeline
+- **UI**: Streamlit with custom CSS for professional appearance
+
+## Deployment Considerations
+
+- Use environment variables for all API keys
+- Ensure embedding model consistency between ingest and query
+- Consider rate limits for Hugging Face Inference API
+- Docker support available via included Dockerfile  

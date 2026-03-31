@@ -2,8 +2,13 @@
 Streamlit UI: RAG + Gemini (FAISS, HF Inference embeddings).
 Visitors ask about Abaad Murtaza; replies follow qa_prompts (Abaad speaking to recruiters).
 """
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
 import subprocess
 import sys
+import random
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Iterator, List, Tuple
@@ -95,6 +100,137 @@ def _assistant_chat() -> Iterator[None]:
     with cm:
         yield
 
+# Topic cards configuration
+TOPIC_CARDS = [
+    {
+        "name": "Overview",
+        "icon": "👤",
+        "color": "#DBEAFE",
+        "text_color": "#1E40AF",
+        "description": "Profile summary"
+    },
+    {
+        "name": "Education", 
+        "icon": "🎓",
+        "color": "#D1FAE5",
+        "text_color": "#065F46",
+        "description": "Academic background"
+    },
+    {
+        "name": "Work Experience",
+        "icon": "💼",
+        "color": "#FED7AA",
+        "text_color": "#9A3412",
+        "description": "Professional experience"
+    },
+    {
+        "name": "Teaching",
+        "icon": "📚",
+        "color": "#E9D5FF",
+        "text_color": "#6B21A8",
+        "description": "Teaching experience"
+    },
+    {
+        "name": "Internships",
+        "icon": "🏢",
+        "color": "#FECACA",
+        "text_color": "#991B1B",
+        "description": "Industry exposure"
+    },
+    {
+        "name": "Skills & Tools",
+        "icon": "🔧",
+        "color": "#CFFAFE",
+        "text_color": "#164E63",
+        "description": "Technical skills"
+    },
+    {
+        "name": "Projects",
+        "icon": "🚀",
+        "color": "#D9F99D",
+        "text_color": "#4D7C0F",
+        "description": "Portfolio projects"
+    },
+    {
+        "name": "Certifications",
+        "icon": "🏆",
+        "color": "#FED7AA",
+        "text_color": "#9A3412",
+        "description": "Professional certifications"
+    },
+    {
+        "name": "Recommendations",
+        "icon": "💬",
+        "color": "#FBCFE8",
+        "text_color": "#9F1239",
+        "description": "LinkedIn recommendations"
+    },
+    {
+        "name": "Soft Skills",
+        "icon": "🤝",
+        "color": "#CCFBF1",
+        "text_color": "#134E4A",
+        "description": "Interpersonal skills"
+    }
+]
+
+# Categorized quick prompts
+CATEGORIZED_PROMPTS = {
+    "Overview": [
+        "What drives Abaad's interest in AI?",
+        "How would you summarize Abaad's overall background?",
+        "What kind of problems does Abaad enjoy solving?",
+        "What languages does Abaad speak?",
+        "Where is Abaad currently based?",
+        "Is Abaad open to new opportunities?"
+    ],
+    "Education": [
+        "What makes Abaad's academic profile distinctive?",
+        "Which courses or research shaped Abaad most?",
+        "What is notable about Abaad's education journey?"
+    ],
+    "Work Experience": [
+        "What work experience best reflects Abaad's strengths?",
+        "Which responsibilities has Abaad handled professionally?",
+        "Which achievements stand out across Abaad's roles?",
+        "Which experiences define Abaad's career direction?",
+        "What makes Abaad a strong AI candidate?",
+        "Why might recruiters find Abaad interesting?"
+    ],
+    "Teaching": [
+        "What teaching experience does Abaad bring?",
+        "How does Abaad explain complex ideas clearly?"
+    ],
+    "Internships": [
+        "Which internships were most impactful for Abaad?",
+        "What did Abaad gain from industry exposure?"
+    ],
+    "Skills & Tools": [
+        "Which programming languages does Abaad use confidently?",
+        "What technical tools does Abaad use most?",
+        "Which AI and machine learning skills stand out most?",
+        "How strong is Abaad's experience with LLMs?",
+        "What combination of skills defines Abaad best?"
+    ],
+    "Projects": [
+        "Which projects best showcase Abaad's capabilities?",
+        "What project best demonstrates Abaad's practical thinking?",
+        "What projects are most relevant for recruiters?"
+    ],
+    "Certifications": [
+        "Which certifications strengthen Abaad's profile most?"
+    ],
+    "Recommendations": [
+        "What do LinkedIn recommendations say about Abaad?",
+        "How do others describe working with Abaad?"
+    ],
+    "Soft Skills": [
+        "What soft skills stand out in Abaad's profile?",
+        "Which extracurriculars show leadership or initiative?",
+        "What personal qualities stand out beyond academics?"
+    ]
+}
+
 # Third-person questions visitors ask; the model still answers as Abaad per PROMPT_TMPL.
 CONVERSATION_STARTERS: List[Tuple[str, str]] = [
     ("Give a profile overview of Abaad Murtaza.", "Give a profile overview of Abaad Murtaza."),
@@ -119,13 +255,32 @@ CONVERSATION_STARTERS: List[Tuple[str, str]] = [
 
 
 def _app_ui_css() -> None:
-    """Sidebar hidden + equal-height quick-prompt buttons (full text, no shortening)."""
+    """Sidebar hidden + equal-height quick-prompt buttons (full text, no shortening) + topic cards styling."""
     st.markdown(
         """
         <style>
             [data-testid="stSidebar"] { display: none !important; }
             [data-testid="stSidebarCollapsedControl"] { display: none !important; }
             [data-testid="collapsedControl"] { display: none !important; }
+
+            /* Topic pills */
+            div[data-testid="stPills"] {
+                display: flex !important;
+                justify-content: center !important;
+                margin: 0.35rem 0 1rem 0 !important;
+            }
+
+            div[data-testid="stPills"] > div,
+            div[data-testid="stPills"] [role="radiogroup"] {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                gap: 0.75rem !important;
+            }
+
+            div[data-testid="stPills"] [data-baseweb="tag"] {
+                margin: 0 !important;
+            }
 
             /* Quick prompts: only horizontal blocks with exactly 3 columns (not the 2-col header). */
             section.main [data-testid="stHorizontalBlock"]:has(div[data-testid="column"]:nth-child(3)):not(:has(div[data-testid="column"]:nth-child(4))) {
@@ -221,6 +376,26 @@ def build_chain_gemini(retriever, _llm_repo, _max_new, _temp, _show_sources):
     )
 
 
+def _select_category(category_name: str) -> None:
+    try:
+        st.session_state.selected_category = category_name
+        st.session_state.topic_pills = category_name
+        st.session_state.used_prompts = set()
+        
+        category_prompts = CATEGORIZED_PROMPTS.get(category_name, [])
+        
+        if len(category_prompts) <= 6:
+            st.session_state.current_prompts = category_prompts.copy()
+        else:
+            st.session_state.current_prompts = random.sample(category_prompts, 6)
+    except Exception as e:
+        st.error(f"Error selecting category: {e}")
+        st.session_state.selected_category = None
+        st.session_state.topic_pills = None
+        st.session_state.used_prompts = set()
+        st.session_state.current_prompts = []
+
+
 def _queue_starter_query(full_question: str) -> None:
     st.session_state["_pending_query"] = full_question
 
@@ -251,15 +426,68 @@ show_sources = False
 if "history" not in st.session_state:
     st.session_state.history = []
 
+if "topic_pills" not in st.session_state:
+    st.session_state.topic_pills = None
+
+if "selected_category" not in st.session_state:
+    st.session_state.selected_category = None
+
+if "used_prompts" not in st.session_state:
+    st.session_state.used_prompts = set()
+
+if "current_prompts" not in st.session_state:
+    st.session_state.current_prompts = []
+
 head_cols = st.columns([1, 0.22])
 with head_cols[0]:
     st.title("Abaad's Profile Chatbot")
-    st.caption("Ask about Abaad Murtaza’s background—answers use his CV and uploaded documents.")
+    st.caption("Ask about Abaad Murtaza's background—answers use his CV and uploaded documents.")
 with head_cols[1]:
     st.write("")  # vertical align
     if st.button("Clear chat", use_container_width=True):
         st.session_state.history = []
+        st.session_state.selected_category = None
+        st.session_state.topic_pills = None
+        st.session_state.used_prompts = set()
+        st.session_state.current_prompts = []
         st.rerun()
+
+def _on_topic_pill_change() -> None:
+    try:
+        selected = st.session_state.get("topic_pills")
+        
+        if selected:
+            _select_category(selected)
+        else:
+            st.session_state.selected_category = None
+            st.session_state.topic_pills = None
+            st.session_state.used_prompts = set()
+            st.session_state.current_prompts = []
+    except Exception as e:
+        st.error(f"Error in topic selection: {e}")
+        # Reset state on error
+        st.session_state.selected_category = None
+        st.session_state.topic_pills = None
+        st.session_state.used_prompts = set()
+        st.session_state.current_prompts = []
+
+
+def render_topic_badges() -> None:
+    topic_lookup = {topic["name"]: topic for topic in TOPIC_CARDS}
+    topic_names = [topic["name"] for topic in TOPIC_CARDS]
+
+    st.pills(
+        "Topics",
+        options=topic_names,
+        selection_mode="single",
+        key="topic_pills",
+        format_func=lambda name: f"{topic_lookup[name]['icon']}  {name}",
+        label_visibility="collapsed",
+        on_change=_on_topic_pill_change,
+    )
+
+# Call function
+render_topic_badges()
 
 
 @st.cache_resource(show_spinner="Loading retriever and model…")
@@ -294,17 +522,25 @@ chain = _load_chain(
     show_sources,
 )
 
-st.caption("Quick prompts")
-cols = st.columns(3)
-for idx, (short_label, full_q) in enumerate(CONVERSATION_STARTERS):
-    with cols[idx % 3]:
-        st.button(
-            short_label,
-            key=f"starter_{idx}",
-            use_container_width=True,
-            on_click=_queue_starter_query,
-            args=(full_q,),
-        )
+# Dynamic quick prompts section
+if st.session_state.selected_category:
+    st.caption(f"Quick prompts related to {st.session_state.selected_category}")
+else:
+    st.caption("Select a topic badge above to see related prompts")
+
+if st.session_state.current_prompts:
+    cols = st.columns(3)
+    for idx, prompt in enumerate(st.session_state.current_prompts):
+        with cols[idx % 3]:
+            st.button(
+                prompt,
+                key=f"quick_prompt_{idx}",
+                use_container_width=True,
+                on_click=_queue_starter_query,
+                args=(prompt,),
+            )
+else:
+    st.info("No prompts available. Select a topic badge to get started.")
 
 st.divider()
 
@@ -321,6 +557,21 @@ pending = st.session_state.pop("_pending_query", None)
 query = (user_input or "").strip() or (str(pending).strip() if pending else "")
 
 if query:
+    # Mark this prompt as used if it's from quick prompts
+    if query in st.session_state.current_prompts:
+        st.session_state.used_prompts.add(query)
+        # Remove from current prompts
+        st.session_state.current_prompts.remove(query)
+        
+        # Add new prompt from the same category if available
+        if st.session_state.selected_category:
+            category_prompts = CATEGORIZED_PROMPTS.get(st.session_state.selected_category, [])
+            available_prompts = [p for p in category_prompts if p not in st.session_state.used_prompts and p not in st.session_state.current_prompts]
+            
+            if available_prompts:
+                new_prompt = random.choice(available_prompts)
+                st.session_state.current_prompts.append(new_prompt)
+    
     with st.spinner("Drafting answer…"):
         try:
             res = chain.invoke({"query": query})
