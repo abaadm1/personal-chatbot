@@ -443,7 +443,6 @@ with head_cols[0]:
     st.title("Abaad's Profile Chatbot")
     st.caption("Ask about Abaad Murtaza's background—answers use his CV and uploaded documents.")
 with head_cols[1]:
-    st.write("")  # vertical align
     if st.button("Clear chat", use_container_width=True):
         st.session_state.history = []
         st.session_state.selected_category = None
@@ -451,6 +450,7 @@ with head_cols[1]:
         st.session_state.used_prompts = set()
         st.session_state.current_prompts = []
         st.rerun()
+    st.markdown('<div style="text-align: right; font-size: 0.6em; color: #666;">Knowledge cutoff: April 2026</div>', unsafe_allow_html=True)
 
 def _on_topic_pill_change() -> None:
     try:
