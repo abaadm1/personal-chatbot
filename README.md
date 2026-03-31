@@ -1,6 +1,6 @@
 # Personal Profile Chatbot
 
-A retrieval-augmented assistant that answers questions about my profile using local documents, Google Gemini for generation, and FAISS for search. The system uses a professional tone optimized for recruiter interactions.
+A retrieval-augmented assistant that answers questions about my profile using local documents, Google Gemini 2.5 Flash for generation, sentence-transformers/all-MiniLM-L6-v2 for embeddings, and FAISS for search. The system uses a professional tone optimized for recruiter interactions.
 
 **Live Demo:** https://abaad-chatbot.streamlit.app/
 
