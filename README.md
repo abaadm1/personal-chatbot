@@ -2,6 +2,8 @@
 
 A retrieval-augmented assistant that answers questions about your profile using local documents, Google Gemini for generation, and FAISS for search. The system uses a professional tone optimized for recruiter interactions.
 
+**Live Demo:** https://abaad-chatbot.streamlit.app/
+
 ## Project Structure
 
 | Path | Purpose |
