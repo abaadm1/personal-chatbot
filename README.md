@@ -1,6 +1,6 @@
 # Personal Profile Chatbot
 
-A retrieval-augmented assistant that answers questions about your profile using local documents, Google Gemini for generation, and FAISS for search. The system uses a professional tone optimized for recruiter interactions.
+A retrieval-augmented assistant that answers questions about my profile using local documents, Google Gemini for generation, and FAISS for search. The system uses a professional tone optimized for recruiter interactions.
 
 **Live Demo:** https://abaad-chatbot.streamlit.app/
 
@@ -14,8 +14,6 @@ A retrieval-augmented assistant that answers questions about your profile using 
 | `src/ingest.py` | Builds/refreshes FAISS index from `src/data/` |
 | `src/qa_prompts.py` | System prompt template defining tone and behavior |
 | `src/app.py` | Streamlit web interface with chat and quick prompts |
-| `src/qa_chain_cli.py` | Command-line interface for Q&A |
-| `src/extra_qa_chains.py` | Additional chain experiments |
 | `requirements.txt` | Python dependencies |
 
 ## Setup
@@ -57,6 +55,8 @@ Create a `.env` file in the project root or `src/` directory:
 
 ### 4. Build Document Index
 
+**IMPORTANT:** Ensure `src/data/` contains all relevant documents (.txt, .md, .pdf) that will be used for RAG before running this command.
+
 ```bash
 python src/ingest.py
 ```
@@ -76,15 +76,6 @@ Features:
 - Chat interface with custom avatars
 - Professional recruiter-friendly responses
 - Automatic index building on first run
-
-### Command Line Interface
-
-```bash
-cd src
-python qa_chain_cli.py
-```
-
-Provides the same Q&A functionality in a terminal interface.
 
 ## Document Organization
 
